@@ -8,7 +8,7 @@ class Movie(Document):
     year: int
     image: Optional[str] = None
 
-    class Setting:
+    class Settings:
         name = "movies"
     
     
