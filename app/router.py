@@ -3,7 +3,7 @@ from typing import Optional
 from app.models import Movie
 from app.crud import get_movies
 
-router=APIRouter
+router=APIRouter()
 
 @router.get("/movies", response_model=list[Movie])
 async def read_movies(
