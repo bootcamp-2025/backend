@@ -19,4 +19,4 @@ async def init_db():
     #    "mongodb+srv://<username>:<password>@cluster0.zlhkso0.mongodb.net/?retryWrites=true&w=majority"
     #)
 
-    await init_beanie(database=client.db_name, document_models=[Movie])
+    await init_beanie(database=client[MONGO_DB], document_models=[Movie])
