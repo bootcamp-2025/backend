@@ -25,3 +25,9 @@ async def create_movie(
 )->Movie:
     movie.id= None
     return await movie.insert()
+
+
+async def find_movie(
+        id_movie: str
+):
+    return await Movie.get(id_movie)

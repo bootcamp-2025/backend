@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, Form
 from typing import Optional
 from app.models import Movie
-from app.crud import read_movies, create_movie
+from app.crud import read_movies, create_movie, find_movie
 
 router=APIRouter()
 
@@ -25,3 +25,11 @@ async def get_movies(
 ):
 
     return await read_movies(skip=skip, limit=limit, title=title, year=year, director=director)
+
+
+@router.get("/movies/{id_movie}", response_model=Movie)
+async def get_movie(
+        id_movie: str
+):
+
+    return await find_movie(id_movie)
