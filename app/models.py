@@ -1,6 +1,6 @@
-
 from beanie import Document
 from typing import Optional
+from pydantic import BaseModel
 
 class Movie(Document):
     title: str
@@ -9,6 +9,9 @@ class Movie(Document):
     image: Optional[str] = None
 
     class Settings:
-        name = "movies"
+          name = "movies"
     
-    
+class MovieUpdate(BaseModel):
+    title: Optional[str]
+    director: Optional[str]
+    year: Optional[int]

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Query, Form, File, UploadFile
+from fastapi import APIRouter, HTTPException, Query, Form, File, UploadFile
 from typing import Optional
-from app.models import Movie
-from app.crud import read_movies, create_movie, find_movie, upload_movie_image
+from app.models import Movie, MovieUpdate
+from app.crud import read_movies, create_movie, update_movie, upload_movie_image, find_movie, remove_movie
 from app.storage import client, BUCKET
+from beanie import PydanticObjectId
 
 router=APIRouter()
 
@@ -13,11 +14,14 @@ async def post_movie(
         year: int | None = Form(None),
         image_file: UploadFile | None = File(None)
 ):
+
     movie = Movie(title=title, director=director, year=year)
     movie= await create_movie(movie)
-    
+
     if image_file: 
-        await upload_movie_image(movie.id, image_file)
+        image_path = await upload_movie_image(movie.id, image_file)
+        movie.image = image_path
+        await movie.save()
 
     return movie
 
@@ -29,13 +33,24 @@ async def get_movies(
         year: Optional[int]=None,
         director: Optional[str]=None
 ):
-
     return await read_movies(skip=skip, limit=limit, title=title, year=year, director=director)
-
 
 @router.get("/movies/{id_movie}", response_model=Movie)
 async def get_movie(
         id_movie: str
 ):
-
     return await find_movie(id_movie)
+
+@router.put("/movies/{movie_id}", response_model=Movie)
+async def put_movie(movie_id: PydanticObjectId, movie_update: MovieUpdate):
+    movie = await update_movie(movie_id, movie_update)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    return movie
+
+@router.delete("/movies/{movie_id}")
+async def delete_movie(movie_id: str):
+    deleted = await remove_movie(movie_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Película no encontrada")
+    return {"message": "Película eliminada correctamente"}

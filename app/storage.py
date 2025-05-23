@@ -2,6 +2,7 @@ import io, os
 from minio import Minio
 from minio.commonconfig import ENABLED
 from minio.error import S3Error
+from fastapi import UploadFile
 
 
 MINIO_ENDPOINT= os.getenv("MINIO_ENDPOINT")
@@ -22,9 +23,20 @@ def init_storage():
             {"Status": ENABLED}
         )
 
-async def upload_image(id_movie: str, file)->str:
+async def upload_image(movie_id: str, file: UploadFile)->str:
     data= await file.read()
-    obj_name= f"{id_movie}/{file.filename}"
+    obj_name= f"{movie_id}/{file.filename}"
 
-    client.put_object(BUCKET, obj_name, io.BytesIO(data), length=len(data))
+    client.put_object(
+        BUCKET, obj_name, 
+        io.BytesIO(data), 
+        length=len(data),
+        content_type=file.content_type
+    )
     return obj_name
+
+def delete_image_from_minio(obj_name: str) -> None:
+    try:
+        client.remove_object(BUCKET, obj_name)
+    except Exception as e:
+        print(f"Error al eliminar imagen de MinIO: {e}")

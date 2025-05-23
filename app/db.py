@@ -1,5 +1,5 @@
 from beanie import init_beanie
-from app.models import Movie
+from app.models import Movie, MovieUpdate
 import motor.motor_asyncio
 import os
 

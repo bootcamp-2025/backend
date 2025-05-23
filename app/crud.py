@@ -1,7 +1,8 @@
-from app.models import Movie
-from app.storage import upload_image
-from fastapi import UploadFile
+from app.models import Movie, MovieUpdate
+from app.storage import upload_image, delete_image_from_minio
+from beanie import PydanticObjectId
 from typing import Optional
+from fastapi import UploadFile
 
 async def read_movies(
         skip:int=0,
@@ -28,14 +29,38 @@ async def create_movie(
     movie.id= None
     return await movie.insert()
 
+async def upload_movie_image(
+        movie_id: str,
+        file: UploadFile
+)->str:
+    obj_name= await upload_image(movie_id, file)  
+    return obj_name
+
 async def find_movie(
         id_movie: str
 ):
     return await Movie.get(id_movie)
 
-async def upload_movie_image(
-        id_movie: str,
-        file: UploadFile
-)->str:
-    obj_name= await upload_image(id_movie, file)  
-    return obj_name
+async def update_movie(movie_id: PydanticObjectId, data: MovieUpdate) -> Movie | None:
+    movie = await Movie.get(movie_id)
+    if not movie:
+        return None
+
+    update_data = data.dict(exclude_unset=True)  # Solo los campos que sí se enviaron
+    for field, value in update_data.items():
+        setattr(movie, field, value)
+
+    await movie.save()
+    return movie
+
+async def remove_movie(movie_id: str) -> bool:
+    movie = await Movie.get(movie_id)
+    if not movie:
+        return False
+    # Eliminar imagen si existe
+    if movie.image:
+        await delete_image_from_minio(movie.image)
+
+    # Eliminar la película
+    await movie.delete()
+    return True
