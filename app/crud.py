@@ -1,4 +1,6 @@
 from app.models import Movie
+from app.storage import upload_image
+from fastapi import UploadFile
 from typing import Optional
 
 async def read_movies(
@@ -26,8 +28,14 @@ async def create_movie(
     movie.id= None
     return await movie.insert()
 
-
 async def find_movie(
         id_movie: str
 ):
     return await Movie.get(id_movie)
+
+async def upload_movie_image(
+        id_movie: str,
+        file: UploadFile
+)->str:
+    obj_name= await upload_image(id_movie, file)  
+    return obj_name

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Query, Form
+from fastapi import APIRouter, Query, Form, File, UploadFile
 from typing import Optional
 from app.models import Movie
-from app.crud import read_movies, create_movie, find_movie
+from app.crud import read_movies, create_movie, find_movie, upload_movie_image
+from app.storage import client, BUCKET
 
 router=APIRouter()
 
@@ -10,10 +11,15 @@ async def post_movie(
         title: str = Form(None),
         director: str | None = Form(None),
         year: int | None = Form(None),
-        image_file: str | None = Form(None)
+        image_file: UploadFile | None = File(None)
 ):
     movie = Movie(title=title, director=director, year=year)
-    return await create_movie(movie)
+    movie= await create_movie(movie)
+    
+    if image_file: 
+        await upload_movie_image(movie.id, image_file)
+
+    return movie
 
 @router.get("/movies", response_model=list[Movie])
 async def get_movies(
