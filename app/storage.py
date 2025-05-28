@@ -35,7 +35,7 @@ async def upload_image(movie_id: str, file: UploadFile)->str:
     )
     return obj_name
 
-def delete_image_from_minio(obj_name: str) -> None:
+async def delete_image_from_minio(obj_name: str) -> None:
     try:
         client.remove_object(BUCKET, obj_name)
     except Exception as e:

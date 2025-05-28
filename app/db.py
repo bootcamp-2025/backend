@@ -14,7 +14,6 @@ async def init_db():
     client = motor.motor_asyncio.AsyncIOMotorClient(
         MONGO_URI
     )
-
     #client = motor.motor_asyncio.AsyncIOMotorClient(
     #    "mongodb+srv://<username>:<password>@cluster0.zlhkso0.mongodb.net/?retryWrites=true&w=majority"
     #)

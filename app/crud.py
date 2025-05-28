@@ -41,14 +41,29 @@ async def find_movie(
 ):
     return await Movie.get(id_movie)
 
-async def update_movie(movie_id: PydanticObjectId, data: MovieUpdate) -> Movie | None:
+async def update_movie(
+    movie_id: PydanticObjectId,
+    data: MovieUpdate,
+    image_file: UploadFile | None = None
+) -> Movie | None:
     movie = await Movie.get(movie_id)
     if not movie:
         return None
 
-    update_data = data.dict(exclude_unset=True)  # Solo los campos que sí se enviaron
+    # Aquí accedemos correctamente al dict
+    update_data = data.dict(exclude_unset=True)
+
     for field, value in update_data.items():
         setattr(movie, field, value)
+
+    if image_file:
+        # Borrar imagen anterior si existe
+        if movie.image:
+            await delete_image_from_minio(movie.image)
+
+        # Subir nueva imagen
+        image_path = await upload_image(str(movie.id), image_file)
+        movie.image = image_path
 
     await movie.save()
     return movie
@@ -64,3 +79,7 @@ async def remove_movie(movie_id: str) -> bool:
     # Eliminar la película
     await movie.delete()
     return True
+
+#opción para mostrar todas las películas
+async def get_all_movies():
+    return await Movie.find_all().to_list()
