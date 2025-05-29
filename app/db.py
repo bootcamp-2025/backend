@@ -1,5 +1,5 @@
 from beanie import init_beanie
-from app.models import Movie, MovieUpdate
+from app.models import Movie, MovieUpdate, User
 import motor.motor_asyncio
 import os
 
@@ -18,4 +18,4 @@ async def init_db():
     #    "mongodb+srv://<username>:<password>@cluster0.zlhkso0.mongodb.net/?retryWrites=true&w=majority"
     #)
 
-    await init_beanie(database=client[MONGO_DB], document_models=[Movie])
+    await init_beanie(database=client[MONGO_DB], document_models=[Movie, User])

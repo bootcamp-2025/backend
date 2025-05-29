@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel
 from typing import Optional
+from app.models import User
 import os
 
 # --- Configuración de Seguridad ---
@@ -14,12 +15,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") # "token" es la URL del endpoint de login
-
-# --- Modelos ---
-
-class User(BaseModel):
-    username: str
-    password: str
 
 # --- Funciones de Utilidad ---
 def verify_password(plain_password, hashed_password):

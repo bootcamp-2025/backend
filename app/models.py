@@ -15,3 +15,10 @@ class MovieUpdate(BaseModel):
     title: Optional[str]
     director: Optional[str]
     year: Optional[int]
+
+class User(Document):
+    username: str
+    password: str
+    
+    class Settings:
+        name = "users"
