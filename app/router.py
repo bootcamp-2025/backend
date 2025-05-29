@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException, Query, Form, File, UploadFile
+from fastapi import APIRouter, HTTPException, Query, Form, File, UploadFile, Depends
 from typing import Optional
 from app.models import Movie, MovieUpdate
+from datetime import timedelta
+from app.security import verify_token, authenticate_user, create_access_token
 from app.crud import create_movie, update_movie, upload_movie_image, find_movie, remove_movie, get_all_movies
 from app.storage import client, BUCKET
 from beanie import PydanticObjectId
 
 router=APIRouter()
 
-@router.post("/movies", response_model=Movie)
+@router.post("/movies", response_model=Movie, dependencies=[Depends(verify_token)])
 async def post_movie(
         title: str = Form(None),
         director: str | None = Form(None),
@@ -49,7 +51,7 @@ async def get_movie(
 #         raise HTTPException(status_code=404, detail="Movie not found")
 #     return movie
 
-@router.put("/movies/{movie_id}", response_model=Movie)
+@router.put("/movies/{movie_id}", response_model=Movie, dependencies=[Depends(verify_token)])
 async def put_movie(
     movie_id: PydanticObjectId,
     title: str = Form(None),
@@ -66,7 +68,7 @@ async def put_movie(
 
     return updated_movie
 
-@router.delete("/movies/{movie_id}")
+@router.delete("/movies/{movie_id}", dependencies=[Depends(verify_token)])
 async def delete_movie(movie_id: str):
     deleted = await remove_movie(movie_id)
     if not deleted:
@@ -76,3 +78,16 @@ async def delete_movie(movie_id: str):
 @router.get("/movies")
 async def list_movies():
     return await get_all_movies()
+
+
+@router.post("/token") # Endpoint para obtener el token (login)
+async def login(username:str = Form(...), password:str = Form(...)):
+    user= await authenticate_user(username, password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid Credentials")
+    access_token_expires = timedelta(minutes=30)
+
+    access_token = create_access_token(
+        data={"sub": username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}

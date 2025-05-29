@@ -37,6 +37,19 @@ async def upload_image(movie_id: str, file: UploadFile)->str:
 
 async def delete_image_from_minio(obj_name: str) -> None:
     try:
-        client.remove_object(BUCKET, obj_name)
+        await asyncio.to_thread(client.remove_object, BUCKET, obj_name)
     except Exception as e:
         print(f"Error al eliminar imagen de MinIO: {e}")
+
+async def delete_bucket(bucket_name: str) -> None:
+    try:
+        # Eliminar objetos dentro del bucket
+        objects = client.list_objects(bucket_name, recursive=True)
+        for obj in objects:
+            await asyncio.to_thread(client.remove_object, bucket_name, obj.object_name)
+
+        # Eliminar el bucket
+        await asyncio.to_thread(client.remove_bucket, bucket_name)
+        print(f"Bucket '{bucket_name}' eliminado correctamente.")
+    except Exception as e:
+        print(f"Error al eliminar el bucket: {e}")
