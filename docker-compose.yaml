@@ -1,0 +1,11 @@
+services: 
+  movies-backend:
+    image: backend:latest
+    container_name: movies-backend
+    ports: 
+      - 8000:8000
+    volumes: 
+      - .:/app
+    env_file:
+      - .env.dev
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload

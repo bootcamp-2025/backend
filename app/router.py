@@ -6,8 +6,11 @@ from app.security import verify_token, authenticate_user, create_access_token
 from app.crud import create_movie, update_movie, upload_movie_image, find_movie, remove_movie, get_all_movies
 from app.storage import client, BUCKET
 from beanie import PydanticObjectId
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import io
 
-router=APIRouter()
+router = APIRouter()
 
 @router.post("/movies", response_model=Movie, dependencies=[Depends(verify_token)])
 async def post_movie(
@@ -53,6 +56,23 @@ async def get_movie(
 
 @router.put("/movies/{movie_id}", response_model=Movie, dependencies=[Depends(verify_token)])
 async def put_movie(
+    movie_id: str,
+    title: str = Form(None),
+    director: str = Form(None),
+    year: int = Form(None),
+    image_file: UploadFile | None = File(None)
+):
+    data = MovieUpdate(title=title, director=director, year=year)
+
+    updated_movie = await update_movie(movie_id, data, image_file)
+
+    if not updated_movie:
+        raise HTTPException(status_code=404, detail="Película no encontrada")
+
+    return updated_movie
+
+@router.put("/movies/{movie_id}", response_model=Movie, dependencies=[Depends(verify_token)])
+async def put_movie(
     movie_id: PydanticObjectId,
     title: str = Form(None),
     director: str = Form(None),
@@ -79,7 +99,6 @@ async def delete_movie(movie_id: str):
 async def list_movies():
     return await get_all_movies()
 
-
 @router.post("/token") # Endpoint para obtener el token (login)
 async def login(username:str = Form(...), password:str = Form(...)):
     user= await authenticate_user(username, password)
@@ -91,3 +110,32 @@ async def login(username:str = Form(...), password:str = Form(...)):
         data={"sub": username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/images/{image_path:path}")
+async def get_image(image_path: str):
+    """Endpoint para servir imágenes desde MinIO"""
+    try:
+        # Obtener el objeto de MinIO
+        response = client.get_object(BUCKET, image_path)
+        
+        # Determinar el tipo de contenido basado en la extensión
+        content_type = "image/jpeg"  # default
+        if image_path.lower().endswith('.png'):
+            content_type = "image/png"
+        elif image_path.lower().endswith('.gif'):
+            content_type = "image/gif"
+        elif image_path.lower().endswith('.webp'):
+            content_type = "image/webp"
+        
+        # Leer los datos
+        data = response.read()
+        response.close()
+        
+        return StreamingResponse(
+            io.BytesIO(data),
+            media_type=content_type,
+            headers={"Cache-Control": "max-age=3600"}  # Cache por 1 hora
+        )
+    except Exception as e:
+        # Si no se encuentra la imagen, devolver un 404
+        raise HTTPException(status_code=404, detail="Imagen no encontrada")
